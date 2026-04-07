@@ -45,33 +45,23 @@
                 </div>
                 <h1 class="shimmer-text text-3xl font-extrabold tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-purple-700 via-indigo-500 to-purple-700 dark:from-purple-400 dark:via-indigo-300 dark:to-purple-400">EmuArchive</h1>
             </div>
-            <div class="flex items-center gap-4">
-                <button id="sound-toggle" onclick="toggleSound()" class="hover-glow relative w-12 h-12 rounded-2xl bg-white/60 dark:bg-gray-800/60 border border-purple-200/60 dark:border-purple-500/30 shadow-lg hover:shadow-xl hover:scale-105 active:scale-95 transition-all duration-300 flex items-center justify-center group backdrop-blur-sm" aria-label="Toggle sound">
-                    <svg id="speaker-on" class="w-5 h-5 text-purple-600 dark:text-purple-400 transition-all duration-300" fill="currentColor" viewBox="0 0 24 24">
-                        <path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"/>
-                    </svg>
-                    <svg id="speaker-off" class="w-5 h-5 text-red-500 hidden transition-all duration-300 absolute" fill="currentColor" viewBox="0 0 24 24">
-                        <path d="M16.6915026,12.4744748 L21.950155,7.16346222 C23.3164563,5.75300228 23.3164563,3.47065445 21.950155,2.06019451 C20.5838527,0.649734568 18.3639232,-0.0152586269 16.6915026,1.27269744 L3.50612381,14.4998122 C3.19218622,14.8230019 3.03521743,15.2604416 3.03521743,15.6978813 L3.03521743,21.1272231 C3.03521743,22.8499585 4.13399899,24.1272231 5.85673444,24.1272231 L11.3314484,24.1272231 C11.7688881,24.1272231 12.2063278,23.9702544 12.5295175,23.6563168 L25.6553852,10.52435985 C27.0216875,9.11389991 27.0216875,6.83155208 25.6553852,5.42109214 L21.3051325,1.07084006 L16.6915026,12.4744748 Z"/>
-                    </svg>
-                </button>
-                <button id="theme-toggle" onclick="toggleTheme()" class="relative w-14 h-14 rounded-2xl bg-white/60 dark:bg-gray-800/60 border border-purple-200/60 dark:border-purple-500/30 shadow-lg hover:shadow-xl hover:scale-105 active:scale-95 transition-all duration-300 flex items-center justify-center group backdrop-blur-sm" aria-label="Toggle theme">
-                    <svg id="icon-sun" class="w-6 h-6 text-amber-500 transition-all duration-500 absolute opacity-0 rotate-90 scale-0 dark:opacity-100 dark:rotate-0 dark:scale-100" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                        <circle cx="12" cy="12" r="5"></circle>
-                        <line x1="12" y1="1" x2="12" y2="3"></line>
-                        <line x1="12" y1="21" x2="12" y2="23"></line>
-                        <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
-                        <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
-                        <line x1="1" y1="12" x2="3" y2="12"></line>
-                        <line x1="21" y1="12" x2="23" y2="12"></line>
-                        <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
-                        <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
-                    </svg>
-                    <svg id="icon-moon" class="w-6 h-6 text-purple-600 transition-all duration-500 absolute opacity-100 rotate-0 scale-100 dark:opacity-0 dark:-rotate-90 dark:scale-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                        <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
-                    </svg>
-                    <div class="absolute inset-0 rounded-2xl bg-gradient-to-tr from-amber-400/0 to-orange-400/0 dark:from-amber-400/10 dark:to-orange-400/10 group-hover:from-purple-400/10 group-hover:to-indigo-400/10 dark:group-hover:from-amber-400/20 dark:group-hover:to-orange-400/20 transition-all duration-300"></div>
-                </button>
-            </div>
+            <button id="theme-toggle" onclick="toggleTheme()" class="relative w-14 h-14 rounded-2xl bg-white/60 dark:bg-gray-800/60 border border-purple-200/60 dark:border-purple-500/30 shadow-lg hover:shadow-xl hover:scale-105 active:scale-95 transition-all duration-300 flex items-center justify-center group backdrop-blur-sm" aria-label="Toggle theme">
+                <svg id="icon-sun" class="w-6 h-6 text-amber-500 transition-all duration-500 absolute opacity-0 rotate-90 scale-0 dark:opacity-100 dark:rotate-0 dark:scale-100" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                    <circle cx="12" cy="12" r="5"></circle>
+                    <line x1="12" y1="1" x2="12" y2="3"></line>
+                    <line x1="12" y1="21" x2="12" y2="23"></line>
+                    <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+                    <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+                    <line x1="1" y1="12" x2="3" y2="12"></line>
+                    <line x1="21" y1="12" x2="23" y2="12"></line>
+                    <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+                    <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+                </svg>
+                <svg id="icon-moon" class="w-6 h-6 text-purple-600 transition-all duration-500 absolute opacity-100 rotate-0 scale-100 dark:opacity-0 dark:-rotate-90 dark:scale-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                    <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+                </svg>
+                <div class="absolute inset-0 rounded-2xl bg-gradient-to-tr from-amber-400/0 to-orange-400/0 dark:from-amber-400/10 dark:to-orange-400/10 group-hover:from-purple-400/10 group-hover:to-indigo-400/10 dark:group-hover:from-amber-400/20 dark:group-hover:to-orange-400/20 transition-all duration-300"></div>
+            </button>
         </header>
         <div class="flex flex-col md:flex-row flex-1 overflow-hidden">
             <nav class="md:w-1/3 lg:w-1/4 p-6 bg-white/20 dark:bg-navy-900/20 border-r border-purple-200/50 dark:border-gray-700/50 flex flex-col gap-3 z-10">

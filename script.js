@@ -6,48 +6,7 @@ document.addEventListener('keydown', e => {
     }
 });
 
-// ========== Sound System ==========
-let soundEnabled = localStorage.getItem('soundEnabled') !== 'false';
-function playSound(type) {
-    if (!soundEnabled) return;
-    const audioContext = new (window.AudioContext || window.webkitAudioContext)();
-    const oscillator = audioContext.createOscillator();
-    const gainNode = audioContext.createGain();
-    oscillator.connect(gainNode);
-    gainNode.connect(audioContext.destination);
-    
-    if (type === 'click') {
-        oscillator.frequency.value = 800;
-        gainNode.gain.setValueAtTime(0.1, audioContext.currentTime);
-        gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.1);
-        oscillator.start(audioContext.currentTime);
-        oscillator.stop(audioContext.currentTime + 0.1);
-    } else if (type === 'success') {
-        oscillator.frequency.value = 1200;
-        gainNode.gain.setValueAtTime(0.1, audioContext.currentTime);
-        gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.2);
-        oscillator.start(audioContext.currentTime);
-        oscillator.stop(audioContext.currentTime + 0.2);
-    }
-}
-
-function toggleSound() {
-    soundEnabled = !soundEnabled;
-    localStorage.setItem('soundEnabled', soundEnabled);
-    const speaker = document.getElementById('speaker-on');
-    const muted = document.getElementById('speaker-off');
-    if (soundEnabled) {
-        speaker.classList.remove('hidden');
-        muted.classList.add('hidden');
-        showToast('🔊 Sound enabled');
-        playSound('success');
-    } else {
-        speaker.classList.add('hidden');
-        muted.classList.remove('hidden');
-        showToast('🔇 Sound disabled');
-    }
-}
-
+// ========== Theme Toggle ==========
 function toggleTheme() {
     const html = document.documentElement;
     const btn = document.getElementById('theme-toggle');
@@ -64,23 +23,39 @@ function toggleTheme() {
         localStorage.setItem('theme', 'dark');
         showToast('🌙 Dark theme activated');
     }
-    playSound('success');
 }
 
-// ========== Toast Notification ==========
+// ========== Toast Notification (Optimized) ==========
+const toastQueue = [];
+let toastTimeout;
+
 function showToast(message) {
     const toast = document.createElement('div');
     toast.className = 'toast-notification';
     toast.textContent = message;
     document.body.appendChild(toast);
-    setTimeout(() => toast.remove(), 3000);
+    
+    toastQueue.push(toast);
+    
+    if (toastQueue.length > 1) {
+        toastQueue[toastQueue.length - 2]?.remove();
+    }
+    
+    clearTimeout(toastTimeout);
+    toastTimeout = setTimeout(() => {
+        if (toast && toast.parentElement) {
+            toast.remove();
+        }
+        toastQueue.splice(toastQueue.indexOf(toast), 1);
+    }, 2500);
 }
 
 // ========== Copy to Clipboard ==========
 function copyToClipboard(text) {
     navigator.clipboard.writeText(text).then(() => {
         showToast('✅ Copied to clipboard!');
-        playSound('success');
+    }).catch(() => {
+        showToast('❌ Failed to copy');
     });
 }
 
@@ -236,7 +211,7 @@ bs4Links.sort(sortVersionsDesc);
 
 function generateButtonsHTML(links, isLatest) {
     return links.map((link, index) => `
-        <a href="${link.url}" target="_blank" class="tilt-card ripple-container card-enter group relative overflow-hidden flex flex-col justify-center p-5 bg-white/70 dark:bg-gray-800/60 rounded-[1.25rem] border border-gray-100 dark:border-gray-700 shadow-sm hover:shadow-xl hover:border-purple-400 dark:hover:border-purple-500 transition-all duration-300 backdrop-blur-sm" style="animation-delay: ${index * 40}ms" onclick="playSound('click')">
+        <a href="${link.url}" target="_blank" class="tilt-card ripple-container card-enter group relative overflow-hidden flex flex-col justify-center p-5 bg-white/70 dark:bg-gray-800/60 rounded-[1.25rem] border border-gray-100 dark:border-gray-700 shadow-sm hover:shadow-xl hover:border-purple-400 dark:hover:border-purple-500 transition-all duration-300 backdrop-blur-sm" style="animation-delay: ${index * 40}ms">
             ${index === 0 ? '<span class="badge-latest">Latest</span>' : ''}
             <div class="card-tooltip">คลิกเพื่อดาวน์โหลด v${link.version}</div>
             <div class="absolute -right-6 -top-6 w-24 h-24 bg-gradient-to-br from-purple-400 to-indigo-500 rounded-full blur-2xl opacity-0 group-hover:opacity-20 dark:group-hover:opacity-30 transition-opacity duration-300 pointer-events-none"></div>
@@ -260,21 +235,27 @@ function generateButtonsHTML(links, isLatest) {
 document.getElementById('content-bs5').innerHTML = generateButtonsHTML(bs5Links, true);
 document.getElementById('content-bs4').innerHTML = generateButtonsHTML(bs4Links, true);
 
-// ========== Search Functionality ==========
-function filterCards() {
-    playSound('click');
-    const searchInput = document.getElementById('search-input');
-    const query = searchInput.value.toLowerCase().trim();
+// ========== Search Functionality (Optimized with Debounce) ==========
+let filterTimeout;
+let lastSearchQuery = '';
+
+function filterCards(query) {
+    if (!query) query = document.getElementById('search-input').value.toLowerCase().trim();
+    if (query === lastSearchQuery) return;
+    lastSearchQuery = query;
+    
     const allCards = document.querySelectorAll('.tilt-card');
     let visibleCount = 0;
     
     allCards.forEach(card => {
-        const version = card.querySelector('span.font-semibold').textContent.toLowerCase();
-        if (version.includes(query) || query === '') {
+        const versionSpan = card.querySelector(':scope > div span.font-semibold');
+        if (!versionSpan) return;
+        
+        const version = versionSpan.textContent.toLowerCase();
+        const shouldShow = version.includes(query) || query === '';
+        
+        if (shouldShow) {
             card.style.display = '';
-            card.style.animation = 'none';
-            card.offsetHeight; // reflow
-            card.style.animation = 'cardSlideUp 0.5s cubic-bezier(0.34, 1.56, 0.64, 1)';
             visibleCount++;
         } else {
             card.style.display = 'none';
@@ -285,10 +266,15 @@ function filterCards() {
         showToast('❌ No versions match your search');
     }
 }
-document.getElementById('search-input').addEventListener('input', filterCards);
+
+if (document.getElementById('search-input')) {
+    document.getElementById('search-input').addEventListener('input', (e) => {
+        clearTimeout(filterTimeout);
+        filterTimeout = setTimeout(() => filterCards(e.target.value.toLowerCase().trim()), 200);
+    });
+}
 
 function switchTab(tab) {
-    playSound('click');
     const btn5 = document.getElementById('tab-bs5');
     const btn4 = document.getElementById('tab-bs4');
     const content5 = document.getElementById('content-bs5');
@@ -304,33 +290,41 @@ function switchTab(tab) {
     content4.classList.add('hidden');
 
     if (tab === 'bs5') {
-        btn5.className = activeBtnClass; btn5.innerHTML = activeBadge(5);
-        btn4.className = inactiveBtnClass; btn4.innerHTML = inactiveBadge(4);
+        btn5.className = activeBtnClass;
+        btn5.innerHTML = activeBadge(5);
+        btn4.className = inactiveBtnClass;
+        btn4.innerHTML = inactiveBadge(4);
         content5.classList.remove('hidden');
         retriggerCardAnimations(content5);
     } else {
-        btn4.className = activeBtnClass; btn4.innerHTML = activeBadge(4);
-        btn5.className = inactiveBtnClass; btn5.innerHTML = inactiveBadge(5);
+        btn4.className = activeBtnClass;
+        btn4.innerHTML = activeBadge(4);
+        btn5.className = inactiveBtnClass;
+        btn5.innerHTML = inactiveBadge(5);
         content4.classList.remove('hidden');
         retriggerCardAnimations(content4);
     }
-    filterCards();
 }
 
-// Re-trigger staggered card entrance on tab switch
+// Re-trigger staggered card entrance on tab switch (Optimized)
+let retriggerTimeout;
 function retriggerCardAnimations(container) {
-    const cards = container.querySelectorAll('.card-enter');
-    cards.forEach((card, i) => {
-        card.style.animation = 'none';
-        card.offsetHeight; // reflow
-        card.style.animation = '';
-        card.style.animationDelay = `${i * 40}ms`;
-    });
-    initTiltCards();
+    clearTimeout(retriggerTimeout);
+    retriggerTimeout = setTimeout(() => {
+        const cards = container.querySelectorAll('.card-enter');
+        cards.forEach((card, i) => {
+            card.style.animation = 'none';
+            void card.offsetHeight; // Force reflow with void operator
+            card.style.animation = '';
+            card.style.animationDelay = `${Math.min(i * 40, 400)}ms`; // Cap max delay
+        });
+        initTiltCards();
+    }, 50);
 }
 
+// ========== Snake Animation (Optimized) ==========
 const snake = document.getElementById("snake");
-const segmentCount = 25;
+const segmentCount = 20; // Reduced for better performance
 const segments = [];
 
 for (let i = 0; i < segmentCount; i++) {
@@ -362,16 +356,18 @@ for (let i = 0; i < segmentCount; i++) {
 
 let mouseX = window.innerWidth / 2;
 let mouseY = window.innerHeight / 2;
+let lastMouseX = mouseX;
+let lastMouseY = mouseY;
 
-document.addEventListener("mousemove", (e) => {
+document.addEventListener("mousemove", throttle((e) => {
     mouseX = e.clientX;
     mouseY = e.clientY;
-});
+}, 16));
 
 function animateSnake() {
     const head = segments[0];
-    head.x += (mouseX - head.x) * 0.2;
-    head.y += (mouseY - head.y) * 0.2;
+    head.x += (mouseX - head.x) * 0.15; // Slightly slower for smoothness
+    head.y += (mouseY - head.y) * 0.15;
     head.element.style.left = (head.x - 30) + "px";
     head.element.style.top = (head.y - 20) + "px";
 
@@ -382,132 +378,183 @@ function animateSnake() {
         const dx = prev.x - curr.x;
         const dy = prev.y - curr.y;
         const angle = Math.atan2(dy, dx);
-        const segmentLength = 15;
+        const segmentLength = 16;
 
         curr.x = prev.x - Math.cos(angle) * segmentLength;
         curr.y = prev.y - Math.sin(angle) * segmentLength;
 
-        const size = 40 - i * 1.2;
-        curr.element.style.width = `${Math.max(size, 10)}px`;
-        curr.element.style.height = `${Math.max(size, 10)}px`;
-        curr.element.style.left = (curr.x - size / 2) + "px";
-        curr.element.style.top = (curr.y - size / 2) + "px";
+        const size = 40 - i * 1.4;
+        const finalSize = Math.max(size, 8);
+        curr.element.style.width = `${finalSize}px`;
+        curr.element.style.height = `${finalSize}px`;
+        curr.element.style.left = (curr.x - finalSize / 2) + "px";
+        curr.element.style.top = (curr.y - finalSize / 2) + "px";
     }
     requestAnimationFrame(animateSnake);
 }
 
 animateSnake();
 
-// ========== 3D Tilt Card Effect ==========
+// ========== 3D Tilt Card Effect (Optimized) ==========
+const tiltCardCache = new WeakMap();
+
 function initTiltCards() {
     document.querySelectorAll('.tilt-card').forEach(card => {
-        card.addEventListener('mousemove', (e) => {
-            const rect = card.getBoundingClientRect();
-            const x = e.clientX - rect.left;
-            const y = e.clientY - rect.top;
-            const centerX = rect.width / 2;
-            const centerY = rect.height / 2;
-            const rotateX = (y - centerY) / centerY * -8;
-            const rotateY = (x - centerX) / centerX * 8;
-            card.style.transform = `perspective(800px) rotateX(${rotateX}deg) rotateY(${rotateY}deg) translateY(-4px) scale(1.02)`;
-        });
-        card.addEventListener('mouseleave', () => {
-            card.style.transform = 'perspective(800px) rotateX(0) rotateY(0) translateY(0) scale(1)';
-            card.style.transition = 'transform 0.5s cubic-bezier(0.34, 1.56, 0.64, 1)';
-            setTimeout(() => { card.style.transition = ''; }, 500);
-        });
-        card.addEventListener('mouseenter', () => {
-            card.style.transition = 'none';
-        });
+        if (tiltCardCache.has(card)) return; // Skip if already initialized
+        
+        let tiltTimeout;
+        const handlers = {
+            mousemove: throttle((e) => {
+                const rect = card.getBoundingClientRect();
+                const x = e.clientX - rect.left;
+                const y = e.clientY - rect.top;
+                const centerX = rect.width / 2;
+                const centerY = rect.height / 2;
+                const rotateX = (y - centerY) / centerY * -8;
+                const rotateY = (x - centerX) / centerX * 8;
+                card.style.transform = `perspective(800px) rotateX(${rotateX}deg) rotateY(${rotateY}deg) translateY(-4px) scale(1.02)`;
+            }, 16),
+            mouseleave: () => {
+                card.style.transform = 'perspective(800px) rotateX(0) rotateY(0) translateY(0) scale(1)';
+                card.style.transition = 'transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1)';
+                clearTimeout(tiltTimeout);
+                tiltTimeout = setTimeout(() => { 
+                    card.style.transition = ''; 
+                }, 400);
+            },
+            mouseenter: () => {
+                card.style.transition = 'none';
+            }
+        };
+        
+        card.addEventListener('mousemove', handlers.mousemove);
+        card.addEventListener('mouseleave', handlers.mouseleave);
+        card.addEventListener('mouseenter', handlers.mouseenter);
+        
+        tiltCardCache.set(card, handlers);
     });
+}
+
+function throttle(func, wait) {
+    let timeout = null;
+    let previous = 0;
+    return function executedFunction(...args) {
+        const now = Date.now();
+        const remaining = wait - (now - previous);
+        clearTimeout(timeout);
+        if (remaining <= 0 || remaining > wait) {
+            if (timeout) {
+                clearTimeout(timeout);
+                timeout = null;
+            }
+            previous = now;
+            func.apply(this, args);
+        } else {
+            timeout = setTimeout(() => {
+                previous = Date.now();
+                timeout = null;
+                func.apply(this, args);
+            }, remaining);
+        }
+    };
 }
 initTiltCards();
 
-// ========== Ripple Click Effect ==========
-document.querySelectorAll('.ripple-container').forEach(btn => {
-    btn.addEventListener('click', function(e) {
-        const ripple = document.createElement('span');
-        ripple.classList.add('ripple');
-        const rect = this.getBoundingClientRect();
-        const size = Math.max(rect.width, rect.height);
-        ripple.style.width = ripple.style.height = size + 'px';
-        ripple.style.left = (e.clientX - rect.left - size / 2) + 'px';
-        ripple.style.top = (e.clientY - rect.top - size / 2) + 'px';
-        this.appendChild(ripple);
-        setTimeout(() => ripple.remove(), 600);
-    });
-});
+// ========== Ripple Click Effect (Optimized - Delegated) ==========
+document.addEventListener('click', function(e) {
+    const btn = e.target.closest('.ripple-container');
+    if (!btn) return;
+    
+    const ripple = document.createElement('span');
+    ripple.classList.add('ripple');
+    const rect = btn.getBoundingClientRect();
+    const size = Math.max(rect.width, rect.height);
+    ripple.style.width = ripple.style.height = size + 'px';
+    ripple.style.left = (e.clientX - rect.left - size / 2) + 'px';
+    ripple.style.top = (e.clientY - rect.top - size / 2) + 'px';
+    btn.appendChild(ripple);
+    setTimeout(() => ripple.remove(), 600);
+}, true);
 
-// ========== Floating Particles ==========
+// ========== Floating Particles (Optimized) ==========
 (function() {
     const canvas = document.getElementById('particles-canvas');
     if (!canvas) return;
-    const ctx = canvas.getContext('2d');
+    const ctx = canvas.getContext('2d', { alpha: true, willReadFrequently: false });
+    if (!ctx) return;
+    
     let particles = [];
-    const PARTICLE_COUNT = 40;
+    const PARTICLE_COUNT = 30; // Reduced for smoother performance
 
     function resize() {
         canvas.width = window.innerWidth;
         canvas.height = window.innerHeight;
     }
     resize();
-    window.addEventListener('resize', resize);
+    window.addEventListener('resize', throttle(resize, 500));
 
     for (let i = 0; i < PARTICLE_COUNT; i++) {
         particles.push({
             x: Math.random() * canvas.width,
             y: Math.random() * canvas.height,
-            vx: (Math.random() - 0.5) * 0.4,
-            vy: (Math.random() - 0.5) * 0.4,
-            size: Math.random() * 3 + 1,
-            opacity: Math.random() * 0.4 + 0.1,
-            hue: Math.random() * 60 + 250 // purple-blue range
+            vx: (Math.random() - 0.5) * 0.3,
+            vy: (Math.random() - 0.5) * 0.3,
+            size: Math.random() * 2.5 + 0.5,
+            opacity: Math.random() * 0.3 + 0.1,
+            hue: Math.random() * 60 + 250
         });
     }
 
-    function drawParticles() {
+    let lastTime = performance.now();
+    function drawParticles(currentTime) {
+        const deltaTime = (currentTime - lastTime) / 16.66; // Normalize to 60fps
+        lastTime = currentTime;
+
         ctx.clearRect(0, 0, canvas.width, canvas.height);
+        
         particles.forEach((p, i) => {
-            p.x += p.vx;
-            p.y += p.vy;
+            p.x += p.vx * deltaTime;
+            p.y += p.vy * deltaTime;
 
             if (p.x < 0) p.x = canvas.width;
             if (p.x > canvas.width) p.x = 0;
             if (p.y < 0) p.y = canvas.height;
             if (p.y > canvas.height) p.y = 0;
 
-            // Glow
-            const gradient = ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, p.size * 4);
-            gradient.addColorStop(0, `hsla(${p.hue}, 80%, 65%, ${p.opacity})`);
-            gradient.addColorStop(1, `hsla(${p.hue}, 80%, 65%, 0)`);
+            // Draw glow
+            const gradient = ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, p.size * 3);
+            gradient.addColorStop(0, `hsla(${p.hue}, 75%, 60%, ${p.opacity * 0.6})`);
+            gradient.addColorStop(1, `hsla(${p.hue}, 75%, 60%, 0)`);
             ctx.beginPath();
-            ctx.arc(p.x, p.y, p.size * 4, 0, Math.PI * 2);
+            ctx.arc(p.x, p.y, p.size * 3, 0, Math.PI * 2);
             ctx.fillStyle = gradient;
             ctx.fill();
 
-            // Core
+            // Draw core
             ctx.beginPath();
             ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
-            ctx.fillStyle = `hsla(${p.hue}, 80%, 75%, ${p.opacity + 0.2})`;
+            ctx.fillStyle = `hsla(${p.hue}, 80%, 70%, ${p.opacity})`;
             ctx.fill();
 
-            // Draw lines between close particles
-            for (let j = i + 1; j < particles.length; j++) {
-                const p2 = particles[j];
-                const dx = p.x - p2.x;
-                const dy = p.y - p2.y;
-                const dist = Math.sqrt(dx * dx + dy * dy);
-                if (dist < 150) {
-                    ctx.beginPath();
-                    ctx.moveTo(p.x, p.y);
-                    ctx.lineTo(p2.x, p2.y);
-                    ctx.strokeStyle = `hsla(270, 60%, 60%, ${0.08 * (1 - dist / 150)})`;
-                    ctx.lineWidth = 0.5;
-                    ctx.stroke();
+            // Draw connecting lines (optimized)
+            if (i % 2 === 0) { // Only check every other particle
+                for (let j = i + 1; j < Math.min(i + 4, particles.length); j++) {
+                    const p2 = particles[j];
+                    const dx = p.x - p2.x;
+                    const dy = p.y - p2.y;
+                    const dist = Math.sqrt(dx * dx + dy * dy);
+                    if (dist < 120) {
+                        ctx.beginPath();
+                        ctx.moveTo(p.x, p.y);
+                        ctx.lineTo(p2.x, p2.y);
+                        ctx.strokeStyle = `hsla(270, 60%, 60%, ${0.06 * (1 - dist / 120)})`;
+                        ctx.lineWidth = 0.4;
+                        ctx.stroke();
+                    }
                 }
             }
         });
         requestAnimationFrame(drawParticles);
     }
-    drawParticles();
+    requestAnimationFrame(drawParticles);
 })();
