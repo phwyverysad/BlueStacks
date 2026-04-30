@@ -10,10 +10,10 @@ document.addEventListener('keydown', e => {
 function toggleTheme() {
     const html = document.documentElement;
     const btn = document.getElementById('theme-toggle');
-    
+
     btn.classList.add('switching');
     setTimeout(() => btn.classList.remove('switching'), 500);
-    
+
     if (html.classList.contains('dark')) {
         html.classList.remove('dark');
         localStorage.setItem('theme', 'light');
@@ -34,13 +34,13 @@ function showToast(message) {
     toast.className = 'toast-notification';
     toast.textContent = message;
     document.body.appendChild(toast);
-    
+
     toastQueue.push(toast);
-    
+
     if (toastQueue.length > 1) {
         toastQueue[toastQueue.length - 2]?.remove();
     }
-    
+
     clearTimeout(toastTimeout);
     toastTimeout = setTimeout(() => {
         if (toast && toast.parentElement) {
@@ -163,13 +163,13 @@ const rawUrls = [
 ];
 
 const customLinks = [
-    { url: "https://gofile.io/d/U9I23H", filename: "bluestacks-app-player-5-21-218-1001.exe" },
-    { url: "https://gofile.io/d/6U8oZg", filename: "bluestacks-app-player-5-21-580-1017.exe" },
-    { url: "https://gofile.io/d/XvePjD", filename: "bluestacks-5-22-91-1029.exe" },
-    { url: "https://gofile.io/d/l8gp4F", filename: "bluestacks-5-22-166-1003.exe" }
+    { url: "https://github.com/phwyverysad/BlueStacks/releases/download/BlueStacks/bluestacks-app-player-5-21-218-1001.exe", filename: "bluestacks-app-player-5-21-218-1001.exe" },
+    { url: "https://github.com/phwyverysad/BlueStacks/releases/download/BlueStacks/bluestacks-app-player-5-21-580-1017.exe", filename: "bluestacks-app-player-5-21-580-1017.exe" },
+    { url: "https://github.com/phwyverysad/BlueStacks/releases/download/BlueStacks/bluestacks-app-player-5-22-91-1029.exe", filename: "bluestacks-5-22-91-1029.exe" },
+    { url: "https://github.com/phwyverysad/BlueStacks/releases/download/BlueStacks/bluestacks-app-player-5-22-166-1003.exe", filename: "bluestacks-5-22-166-1003.exe" }
 ];
 
-const allData = [ ...customLinks, ...rawUrls.map(url => ({ url: url, filename: url.split('/').pop() })) ];
+const allData = [...customLinks, ...rawUrls.map(url => ({ url: url, filename: url.split('/').pop() }))];
 const bs5Links = [];
 const bs4Links = [];
 
@@ -189,7 +189,7 @@ allData.forEach(item => {
     const match = filename.match(/bluestacks(?:-app-player)?-([\d-]+)(?:_2)?\.exe/i);
     if (match) {
         version = match[1].replace(/-/g, '.');
-        if (version.startsWith('5')) { bs5Links.push({ url: item.url, version }); } 
+        if (version.startsWith('5')) { bs5Links.push({ url: item.url, version }); }
         else if (version.startsWith('4')) { bs4Links.push({ url: item.url, version }); }
     }
 });
@@ -197,7 +197,7 @@ allData.forEach(item => {
 function sortVersionsDesc(a, b) {
     const vA = a.version.replace('Beta ', '').split('.').map(Number);
     const vB = b.version.replace('Beta ', '').split('.').map(Number);
-    for(let i = 0; i < Math.max(vA.length, vB.length); i++) {
+    for (let i = 0; i < Math.max(vA.length, vB.length); i++) {
         const numA = vA[i] || 0;
         const numB = vB[i] || 0;
         if (numA > numB) return -1;
@@ -243,17 +243,17 @@ function filterCards(query) {
     if (!query) query = document.getElementById('search-input').value.toLowerCase().trim();
     if (query === lastSearchQuery) return;
     lastSearchQuery = query;
-    
+
     const allCards = document.querySelectorAll('.tilt-card');
     let visibleCount = 0;
-    
+
     allCards.forEach(card => {
         const versionSpan = card.querySelector(':scope > div span.font-semibold');
         if (!versionSpan) return;
-        
+
         const version = versionSpan.textContent.toLowerCase();
         const shouldShow = version.includes(query) || query === '';
-        
+
         if (shouldShow) {
             card.style.display = '';
             visibleCount++;
@@ -261,7 +261,7 @@ function filterCards(query) {
             card.style.display = 'none';
         }
     });
-    
+
     if (visibleCount === 0 && query !== '') {
         showToast('❌ No versions match your search');
     }
@@ -282,7 +282,7 @@ function switchTab(tab) {
 
     const activeBtnClass = "nav-btn ripple-container w-full text-left px-5 py-4 rounded-2xl font-bold transition-all duration-300 flex items-center gap-3 shadow-md bg-gradient-to-r from-lavender-100 to-white dark:from-gray-800 dark:to-navy-800 text-purple-800 dark:text-purple-300 border border-purple-300 dark:border-purple-500/50 relative overflow-hidden group";
     const inactiveBtnClass = "nav-btn ripple-container w-full text-left px-5 py-4 rounded-2xl font-bold transition-all duration-300 flex items-center gap-3 text-gray-500 dark:text-gray-400 hover:bg-white/60 dark:hover:bg-gray-800/60 hover:text-purple-700 dark:hover:text-purple-300 border border-transparent hover:border-purple-200 dark:hover:border-gray-700 group relative overflow-hidden";
-    
+
     const activeBadge = (num) => `<div class="absolute inset-0 bg-gradient-to-r from-purple-500/10 to-transparent dark:from-purple-500/20"></div><span class="relative z-10 flex items-center justify-center w-9 h-9 rounded-full bg-purple-600 dark:bg-purple-500 text-white text-sm shadow-sm">${num}</span><span class="relative z-10">App Player ${num}</span>`;
     const inactiveBadge = (num) => `<span class="relative z-10 flex items-center justify-center w-9 h-9 rounded-full bg-gray-200 dark:bg-gray-800 text-gray-500 dark:text-gray-400 text-sm group-hover:bg-purple-200 dark:group-hover:bg-purple-900/50 transition-colors">${num}</span><span class="relative z-10">App Player ${num}</span>`;
 
@@ -401,7 +401,7 @@ const tiltCardCache = new WeakMap();
 function initTiltCards() {
     document.querySelectorAll('.tilt-card').forEach(card => {
         if (tiltCardCache.has(card)) return; // Skip if already initialized
-        
+
         let tiltTimeout;
         const handlers = {
             mousemove: throttle((e) => {
@@ -418,19 +418,19 @@ function initTiltCards() {
                 card.style.transform = 'perspective(800px) rotateX(0) rotateY(0) translateY(0) scale(1)';
                 card.style.transition = 'transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1)';
                 clearTimeout(tiltTimeout);
-                tiltTimeout = setTimeout(() => { 
-                    card.style.transition = ''; 
+                tiltTimeout = setTimeout(() => {
+                    card.style.transition = '';
                 }, 400);
             },
             mouseenter: () => {
                 card.style.transition = 'none';
             }
         };
-        
+
         card.addEventListener('mousemove', handlers.mousemove);
         card.addEventListener('mouseleave', handlers.mouseleave);
         card.addEventListener('mouseenter', handlers.mouseenter);
-        
+
         tiltCardCache.set(card, handlers);
     });
 }
@@ -461,10 +461,10 @@ function throttle(func, wait) {
 initTiltCards();
 
 // ========== Ripple Click Effect (Optimized - Delegated) ==========
-document.addEventListener('click', function(e) {
+document.addEventListener('click', function (e) {
     const btn = e.target.closest('.ripple-container');
     if (!btn) return;
-    
+
     const ripple = document.createElement('span');
     ripple.classList.add('ripple');
     const rect = btn.getBoundingClientRect();
@@ -477,12 +477,12 @@ document.addEventListener('click', function(e) {
 }, true);
 
 // ========== Floating Particles (Optimized) ==========
-(function() {
+(function () {
     const canvas = document.getElementById('particles-canvas');
     if (!canvas) return;
     const ctx = canvas.getContext('2d', { alpha: true, willReadFrequently: false });
     if (!ctx) return;
-    
+
     let particles = [];
     const PARTICLE_COUNT = 30; // Reduced for smoother performance
 
@@ -511,7 +511,7 @@ document.addEventListener('click', function(e) {
         lastTime = currentTime;
 
         ctx.clearRect(0, 0, canvas.width, canvas.height);
-        
+
         particles.forEach((p, i) => {
             p.x += p.vx * deltaTime;
             p.y += p.vy * deltaTime;
